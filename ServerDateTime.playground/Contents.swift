@@ -7,26 +7,26 @@ enum Websites: String {
 }
 
 /// Gets the server datetime from the headers of an allowed website using URLSession
-///
-/// - Parameters:
-///   - url: an URL from allowed websites
-///   - completionHandler: An optional date if succeded
-func getServerTime(url: Websites, completionHandler: @escaping (_ date: Date?) -> Void) {
-
-    guard let url = URL(string: url.rawValue) else { return }
-    let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-        
-        if let httpResponse = response as? HTTPURLResponse,
-            let contentType = httpResponse.allHeaderFields["Date"] as? String {
-            
-            let dateFormatter = DateFormatter()
-            dateFormatter.locale = Locale(identifier: "en_US")
-            dateFormatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss z"
-            let serverTime = dateFormatter.date(from: contentType)
-            completionHandler(serverTime)
-        }
+/// - Parameter url: an URL from allowed websites
+/// - Throws: An error if ocurres
+/// - Returns: An optional date if succeded
+func getServerTime(url: Websites) async throws -> Date? {
+    guard let url = URL(string: url.rawValue) else {
+        throw URLError(.badURL)
     }
-    task.resume()
+    let request = URLRequest(url: url)
+
+    let (data, response) = try await URLSession.shared.data(for: request)
+    if let httpResponse = response as? HTTPURLResponse,
+       let contentType = httpResponse.allHeaderFields["Date"] as? String {
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US")
+        dateFormatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss z"
+        let serverTime = dateFormatter.date(from: contentType)
+        return serverTime
+    }
+    return nil
 }
 
 /// Prints a date from a website
@@ -43,14 +43,13 @@ func printDateTime(date: Date, url: Websites) {
     print("Formatted Time: \(dateGet) from: \(url.rawValue)")
 }
 
-getServerTime(url: .Google) { (date) -> Void in
-    guard let date else { return }
-
-    printDateTime(date: date, url: .Google)
-}
-
-getServerTime(url: .Apple) { (date) -> Void in
-    guard let date else { return }
-
-    printDateTime(date: date, url: .Apple)
+Task {
+    do {
+        guard let googleDate = try await getServerTime(url: .Google) else { return }
+        guard let appleDate = try await getServerTime(url: .Apple) else { return }
+        printDateTime(date: googleDate, url: .Google)
+        printDateTime(date: appleDate, url: .Apple)
+    } catch {
+        print(error)
+    }
 }
