@@ -11,8 +11,8 @@ enum Websites: String {
 /// - Parameters:
 ///   - url: an URL from allowed websites
 ///   - completionHandler: An optional date if succeded
-func getServerTime(url: Websites, completionHandler: @escaping (_ getResDate: Date?) -> Void) {
-    
+func getServerTime(url: Websites, completionHandler: @escaping (_ date: Date?) -> Void) {
+
     guard let url = URL(string: url.rawValue) else { return }
     let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
         
@@ -43,14 +43,14 @@ func printDateTime(date: Date, url: Websites) {
     print("Formatted Time: \(dateGet) from: \(url.rawValue)")
 }
 
-getServerTime(url: .Google) { (getResDate) -> Void in
-    guard let date = getResDate else { return }
+getServerTime(url: .Google) { (date) -> Void in
+    guard let date else { return }
 
     printDateTime(date: date, url: .Google)
 }
 
-getServerTime(url: .Apple) { (getResDate) -> Void in
-    guard let date = getResDate else { return }
+getServerTime(url: .Apple) { (date) -> Void in
+    guard let date else { return }
 
     printDateTime(date: date, url: .Apple)
 }
